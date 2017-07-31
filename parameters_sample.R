@@ -4,36 +4,11 @@ getwd()
 
 setwd("/Users/paulasuredahorrach/documents/universitat/holanda/projecte")
 
-#Num reads
-reads_table <- read.table("~/Documents/Universitat/Holanda/Projecte/read_depth_per_sample_ibd.txt", sep = "\t", header = T)
-
-## Count num species
-  tax_table <- read.table("~/Documents/Universitat/Holanda/Projecte/IBD_taxonomy_metaphlan2.txt", sep = "\t", header = T, row.names = 1)
-  
-  loop_table <- as.data.frame(matrix(nrow = nrow(tax_table) , ncol = ncol(tax_table)))
-  
-## Count only "|s_" --> 7 fields
-  for (i in 1:nrow(tax_table)) {
-       
-        if (count.fields(textConnection(row.names(tax_table[i,])), sep="|") == 7){
-             #print (paste0("Species found: ", row.names(tax_table[i,]))) ##Loop check
-          
-          loop_table[i,] = tax_table[i,]
-          
-          }
+#Reads table
+  reads_table <- read.table("~/Documents/Universitat/Holanda/Projecte/reads_over_10M.txt", sep = "\t", header = T)
      
-      }
-
-# Give row names to the new table
-  row.names(loop_table) = row.names(tax_table)
-  
-# Give column names to  new table
-  colnames(loop_table) = colnames(tax_table)
-
-##Remove all rows with NA values  
-  species_table <- na.omit(loop_table)
-  
-  sp_table <- write.table(species_table, file = "~/species_table.txt", quote = F, sep = "\t")
+#Species table
+  species_table <- read.table("~/Documents/Universitat/Holanda/Projecte/Filtered_DUDes/species_table_DUDes.txt", sep = "\t", header = T, row.names = 1)
 
         ## Calculate number of species per sample ##
 
@@ -56,26 +31,14 @@ reads_table <- read.table("~/Documents/Universitat/Holanda/Projecte/read_depth_p
 colnames(species_results) = c("Nº of species")
 rownames(species_results) = colnames(species_table)
   
-#Introduce rownames to merge
-    species_results$IBDFEC <- rownames(species_results)
-
-
-
-sp_results <- write.table(species_results, file = "~/species_results.txt", quote = F, sep = "\t")
-
-### Shannon Index #### - diversity per sample
-
-library(vegan)
-
-#Traspose species_result table -- diversity function <- species:columns / samples:rows
-t_species_table <- as.data.frame(t(species_table))
-
- #Calculate Shannon Index
-
-diversity_table <- as.data.frame(diversity(t_species_table, index = "shannon"))
-
-dv_results <- write.table(diversity_table, file = "~/diversity_table.txt", quote = F, sep = "\t")
+sp_results <- write.table(species_results, file = "~/filtered_species_results_DUDes.txt", quote = F, sep = "\t")
   
+  #Introduce rownames to merge
+    species_results$IBDFEC <- rownames(species_results)
+  
+#Shannon diversity table
+  diversity_table <- read.table("~/Documents/Universitat/Holanda/Projecte/Filtered_DUDes/alpha_diversity_DUDes.txt", sep = "\t", header = T, row.names = 1)
+
   #Introduce rownames to merge
     diversity_table$IBDFEC <- rownames(diversity_table)
  
@@ -87,5 +50,7 @@ dv_results <- write.table(diversity_table, file = "~/diversity_table.txt", quote
   }
  
  sample_table <- Reduce(MyMerge, list(diversity_table, species_results, reads_table))
+  rownames(sample_table) <- sample_table[,1]
+  sample_table <- sample_table[,-1]
  
- merge_results <- write.table(sample_table, file = "~/merge_table.txt", quote = F, sep = "\t")
+ merge_results <- write.table(sample_table, file = "~/filtered_sample_parameters_DUDes.txt", quote = F, sep = "\t")

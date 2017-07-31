@@ -6,43 +6,45 @@ getwd()
 setwd("/Users/paulasuredahorrach/documents/universitat/holanda/projecte")
 
 ## Create a filum table 
-tax_table <- read.table("~/Documents/Universitat/Holanda/Projecte/IBD_taxonomy_DUDes.txt", sep = "\t", header = T, row.names = 1)
+tax_table <- read.table("~/Documents/Universitat/Holanda/Projecte/filtered_tax_DUDes.txt", sep = "\t", header = T, row.names = 1, check.names = F)
+  t_tax_table <- as.data.frame(t(tax_table))
+loop_table <- as.data.frame(matrix(nrow = nrow(t_tax_table) , ncol = ncol(t_tax_table)))
 
-loop_table <- as.data.frame(matrix(nrow = nrow(tax_table) , ncol = ncol(tax_table)))
+## Count only "|s_" --> 7 fields
 
-## Count only "|p_" --> 2 fields
-
-for (i in 1:nrow(tax_table)) {
+for (i in 1:nrow(t_tax_table)) {
   
-  if (count.fields(textConnection(row.names(tax_table[i,])), sep="|") == 2){
+  if (count.fields(textConnection(row.names(t_tax_table[i,])), sep="|") == 7){
     #print (paste0("Species found: ", row.names(tax_table[i,]))) ##Loop check
     
-    loop_table[i,] = tax_table[i,]
+    loop_table[i,] = t_tax_table[i,]
     
   }
   
 }
 
 # Give row names to the new table
-row.names(loop_table) = row.names(tax_table)
+row.names(loop_table) = row.names(t_tax_table)
 
 # Give column names to  new table
-colnames(loop_table) = colnames(tax_table)
+colnames(loop_table) = colnames(t_tax_table)
 
 ##Remove all rows with NA values  
-filum_table <- na.omit(loop_table)
+species_table <- na.omit(loop_table)
 
-fl_table <- write.table(filum_table, file = "~/filum_table_DUDes.txt", quote = F, sep = "\t")
+sp_table <- write.table(species_table, file = "~/species_table_DUDes.txt", quote = F, sep = "\t")
 
 ##Transpose the filum table for the diversity function
-t_filum_table <- as.data.frame(t(filum_table))
+t_species_table <- as.data.frame(t(species_table))
 
 
 
 library(vegan)
 library(ggplot2)
 
-alpha <- as.data.frame(diversity(t_filum_table,index="shannon"))
+alpha <- as.data.frame(diversity(t_species_table,index="shannon"))
+
+  alpha_shannon <- write.table(alpha, file = "~/alpha_diversity_DUDes.txt", quote = F, sep="\t")
 
 intestinal_groups <- read.table("~/Documents/Universitat/Holanda/Projecte/intestinal_groups.txt", sep = "\t", header = T, row.names = 1)
 
@@ -51,9 +53,15 @@ rownames(group_taxa) <- group_taxa[,1]
 group_taxa2 <- group_taxa[,-1]
 colnames(group_taxa2)[2] <- "diversity"
 
+## Per ordenar el plot en funció de la categoria
+group_taxa2$Group2="none"
+group_taxa2[group_taxa2$Group=="normal",]$Group2="1_normal"
+group_taxa2[group_taxa2$Group=="intermediate",]$Group2="2_intermediate"
+group_taxa2[group_taxa2$Group=="small intestine",]$Group2="3_small_intestine"
 
 ##### Violin plot
-violin_plot <- ggplot(group_taxa2, aes(x=group_taxa2$Group, y=group_taxa2$diversity, fill=group_taxa2$Group)) + labs (y="Shannon Diversity Index", x="Group") + geom_violin(trim=FALSE) + geom_boxplot(width = 0.1) + scale_fill_manual(values=c("deepskyblue", "yellow","red","deepskyblue")) + theme_classic() + theme(legend.position="none") + theme(axis.text.x = element_text(hjust = 1, size=16,color="black"))   
+
+violin_plot <- ggplot(group_taxa2, aes(x=group_taxa2$Group2, y=group_taxa2$diversity, fill=group_taxa2$Group2)) + labs (y="Shannon Diversity Index", x="Group") + geom_violin(trim=FALSE) + geom_boxplot(width = 0.1) + scale_fill_manual(values=c("black","#2F2BFF","red")) + theme_classic() + theme(legend.position="none") + theme(axis.text.x = element_text(hjust = 1, size=16,color="black"))    
 violin_plot
 
 ##Alternative function   
@@ -64,7 +72,7 @@ x2 <- group_taxa2$diversity[group_taxa2$Group=="intermediate"]
 x3 <- group_taxa2$diversity[group_taxa2$Group=="small intestine"]
 
 vioplot(x1, x2, x3, names=c("normal", "intermediate", "small intestine"), 
-        col="white")
+        col="#00658f")
 
 
 
